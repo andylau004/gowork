@@ -1,0 +1,2 @@
+# gocode
+some tst gocode
