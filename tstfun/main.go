@@ -35,6 +35,9 @@ func ref(z T) *T {
 // 检查堆栈逃逸
 func main() {
 
+	tst_fun_entry()
+	return
+
 	var obj T
 	p1 := &obj
 
