@@ -115,9 +115,8 @@ func TstTimeOutChan() {
 				quit <- true
 				fmt.Println("work timeout ")
 				return
-			}
-
-		}
+			} // end select
+		} // end for
 	}()
 
 	fmt.Println("aaaaaaaaaaaaaaaaaaaaa")

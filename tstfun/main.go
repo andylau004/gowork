@@ -33,17 +33,48 @@ func ref(z T) *T {
 	return &z
 }
 
+func tst15() {
+
+	var val int
+	val = 2
+	workcount := 0
+	for i := 0; i < 15; i++ {
+		val *= 2
+		workcount++
+	}
+
+	fmt.Println("val=", val)
+	fmt.Println("workcount=", workcount)
+
+	var other int
+	other = 2 << 4
+	fmt.Println("other=", other)
+
+	var tmp1 int
+	tmp1 = -1
+	tmp1 = (-1 << 3)
+	fmt.Println("tmp1=", tmp1)
+}
+
 // 检查堆栈逃逸
 func main() {
 
+	TstDinner()
+	return
+
+	tst15()
+	return
+
+	StartRecvUpload()
+	return
+
 	TstChanEntry()
-	return ;
-	
+	return
+
 	TstBlg4Fun()
 
-	time.Sleep( 2 * time.Second )
-	return ;
-
+	time.Sleep(2 * time.Second)
+	return
 
 	tst_fun_entry()
 	return
