@@ -234,6 +234,26 @@ func Tst_Ctx_WithTimOut_1() {
 	fmt.Println("main thread Exit...")
 }
 
+func mainTask(ctx context.Context, taskName string) {
+
+}
+
+func Tst_Ctx_12() {
+	ctx, _ := context.WithTimeout(context.Background(), 50*time.Millisecond)
+
+	go mainTask(ctx, "1")
+	go mainTask(ctx, "2")
+	go mainTask(ctx, "3")
+
+	select {
+	case <-ctx.Done():
+		fmt.Println("main error:", ctx.Err())
+	}
+
+	fmt.Println("main exit...")
+	time.Sleep(3 * time.Second)
+}
+
 func TstCtxEntry() {
 	Tst_Ctx_WithTimOut_1()
 	return

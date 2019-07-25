@@ -54,6 +54,25 @@ func tstReflectStruct() {
 	}
 	v := reflect.ValueOf(oneBean)
 	fmt.Println("v=", v)
+
+	fmt.Println("v Type:", v.Type())
+	fmt.Println("v CanSet:", v.CanSet())
+
+	v = reflect.ValueOf(&oneBean)
+	fmt.Println("v:", v)
+
+	fmt.Println("v Type:", v.Type())
+	fmt.Println("v CanSet:", v.CanSet())
+
+	//element
+	v = v.Elem()
+
+	// size := v.FieldByName("Size")
+	// fmt.Println("size CanSet:", size.CanSet())
+
+	// size.SetInt(88)
+
+	// fmt.Println("after set:", v)
 }
 
 func TstReflectEntry() {
