@@ -3,6 +3,9 @@ package main
 import (
 	// "context"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"sync"
 	"time"
 
 	blg4go "github.com/YoungPioneers/blog4go"
@@ -194,7 +197,268 @@ func TstMaxNumControl() {
 	fmt.Println("收到退出通知，主程序退出")
 }
 
+// 测试
+// 多个发送者，使用channel发送数据;
+// 一个接收者，接受处理数据；
+// 关闭channel的时候，由接收者关闭，也就是一个线程关闭，其他线程，发现关闭后，退出，
+// 如果发送者关闭，多次关闭会导致，异常
+func Tst1Recver_NSender() {
+	rand.Seed(time.Now().UnixNano())
+	// strId := GetCurTId()
+
+	const MaxV = 1000
+	const NumSenders = 5
+
+	dataCh := make(chan int, 1000)
+	stopCh := make(chan struct{})
+
+	wg := &sync.WaitGroup{}
+	wg.Add(NumSenders + 1)
+
+	// sender 多个
+	for i := 0; i < NumSenders; i++ {
+		go func() {
+			defer wg.Done()
+			strId := GetCurTId()
+
+			for {
+				select {
+				case <-stopCh:
+					fmt.Println(strId, "sender thread exit ")
+					return
+				case dataCh <- rand.Intn(MaxV):
+				}
+			}
+		}()
+	}
+
+	// receive 一个
+	go func() {
+		strId := GetCurTId()
+		defer wg.Done()
+		for {
+			select {
+			case v, _ := <-dataCh:
+				fmt.Println("recver val=", v)
+				if v == MaxV-1 {
+					close(stopCh)
+					fmt.Println(strId, "recver thread exit")
+					// wg.Done()
+					return
+				}
+			}
+		}
+	}()
+
+	wg.Wait()
+	fmt.Println("all work done")
+}
+
+// 测试多sender，多receiver
+func Tst_MRecver_MSender() {
+
+	rand.Seed(time.Now().UnixNano())
+
+	const MaxV = 1000
+	const NumSenders = 50
+	const NumReceivers = 10
+
+	dataCh := make(chan int, 1000)
+	stopCh := make(chan struct{})
+
+	toStop := make(chan string, NumSenders+NumReceivers)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(NumSenders + NumReceivers)
+
+	var stoppedBy string
+	go func() {
+		stoppedBy = <-toStop
+		close(stopCh)
+	}()
+
+	// sender 多个
+	for i := 0; i < NumSenders; i++ {
+
+		go func(id string) {
+
+			defer wg.Done()
+			strId := GetGoroutineIDStr()
+
+			for {
+				value := rand.Intn(MaxV)
+				if value == 0 {
+					toStop <- "sender ### " + id
+					return
+				}
+
+				select {
+				case <-stopCh:
+					fmt.Println(strId, "sender thread exit ")
+					return
+				case dataCh <- value:
+				}
+			}
+
+		}(strconv.Itoa(i))
+
+	}
+
+	// receive 多个
+	for i := 0; i < NumReceivers; i++ {
+
+		go func(id string) {
+			strId := GetGoroutineIDStr()
+			defer wg.Done()
+
+			for {
+				select {
+				case <-stopCh:
+					return
+				case v := <-dataCh:
+					// fmt.Println("recver val=", v)
+					if v == MaxV-1 {
+						select {
+						case toStop <- "receiver#" + id:
+							{
+								fmt.Println(strId, "Receiver thread exit ")
+							}
+						default:
+						}
+						return
+					}
+
+				}
+
+			}
+		}(strconv.Itoa(i))
+
+	}
+
+	wg.Wait()
+	fmt.Println("all work done")
+
+}
+
+func Wrrap() {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer func() {
+			fmt.Println("exit fun")
+			wg.Done()
+		}()
+		i := 1
+		for {
+			i++
+			if i == 100 {
+				fmt.Println("i==100, i=", i)
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
+	fmt.Println("all work done")
+}
+
+func TstCloseCh() {
+	ch := make(chan int, 5)
+	ch <- 18
+	close(ch)
+
+	v, ok := <-ch
+	if ok {
+		fmt.Println("v=", v)
+	}
+
+	{
+		v, ok = <-ch
+		if !ok {
+			fmt.Println("channle closed, can't read")
+		}
+	}
+
+}
+
+func TickWork() {
+	ticker := time.Tick(2 * time.Second)
+
+	for {
+
+		select {
+		case <-ticker:
+			fmt.Println("execute 1s work")
+			// default:
+			// 	fmt.Println("execute default")
+		}
+
+	}
+
+}
+func TstTick() {
+	chExit := make(chan int)
+	go TickWork()
+	<-chExit
+}
+
+func TstSelect() {
+	ch := make(chan int)
+
+	fmt.Println("before select")
+	select {
+	case tmpV := <-ch:
+		fmt.Println("tmpV=", tmpV)
+		// default:
+		// 	fmt.Println("default  exec ")
+	}
+	fmt.Println("TstSelect done")
+	return
+}
+
+func TstChanClose() {
+	chExit := make(chan bool)
+	wg := &sync.WaitGroup{}
+	wg.Add(5)
+
+	for i := 0; i < 5; i++ {
+
+		go func() {
+			for {
+				select {
+				case <-chExit:
+					fmt.Println("tId=", GetGoroutineIDStr(), " exit")
+					wg.Done()
+					return
+				default:
+					fmt.Println("tId=", GetGoroutineIDStr(), " working...")
+				}
+				time.Sleep(time.Millisecond * 300)
+			}
+		}()
+
+	}
+
+	time.Sleep(time.Second * 2)
+	fmt.Println("sleep compelte")
+
+	for i := 0; i < 5; i++ {
+		fmt.Println("before i=", i)
+		chExit <- true
+		fmt.Println("after i=", i)
+	}
+
+	wg.Wait()
+	// time.Sleep(time.Second * 2)
+}
 func TstChanEntry() {
+	TstChanClose()
+	return
+
+	TstSelect()
+	return
+
 	TstMaxNumControl()
 	return
 
