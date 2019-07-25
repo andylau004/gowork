@@ -317,10 +317,10 @@ func TstThreadId() {
 }
 
 func main() {
-	TstReflectEntry()
+	TstCtxEntry()
 	return
 
-	TstCtxEntry()
+	TstReflectEntry()
 	return
 
 	TstChanEntry()

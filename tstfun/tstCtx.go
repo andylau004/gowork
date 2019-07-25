@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"time"
@@ -215,20 +216,22 @@ func Tst_Cancel_1() {
 }
 
 func Tst_Ctx_WithTimOut_1() {
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	// ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 
 	done := make(chan int, 1)
 	go func() {
-		time.Sleep(time.Second)
+		// time.Sleep(time.Second)
+		time.Sleep(200 * time.Millisecond)
 		done <- 1
 	}()
 
 	select {
 	case <-done:
-		fmt.Println("work done ont time")
+		fmt.Println("channel done ont time")
 	case <-ctx.Done():
-		fmt.Println("ctx Err=", ctx.Err())
+		fmt.Println("ctx timeout, ctx Err=", ctx.Err())
 	}
 
 	fmt.Println("main thread Exit...")
@@ -254,7 +257,58 @@ func Tst_Ctx_12() {
 	time.Sleep(3 * time.Second)
 }
 
+type Result struct {
+	r   *http.Response
+	err error
+}
+
+func tstGetBaidu() {
+	// ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tr := &http.Transport{}
+	client := &http.Client{Transport: tr}
+
+	// resultChan := make(chan Result, 1)
+	resultChan := make(chan Result)
+	req, err := http.NewRequest("GET", "http://www.google.com", nil)
+	if err != nil {
+		fmt.Println("http request failed , err=", err)
+		return
+	}
+
+	go func() {
+		tStart := time.Now()
+		resp, err := client.Do(req)
+		fmt.Println("client.Do timeinterval=", time.Now().Sub(tStart))
+
+		pack := Result{r: resp, err: err}
+		resultChan <- pack
+
+		fmt.Println("cheRes <----- pack done")
+		fmt.Printf("pack=%+v\n", pack)
+	}()
+
+	select {
+	case <-ctx.Done():
+		tr.CancelRequest(req)
+		er := <-resultChan
+		fmt.Printf("\n\n")
+		fmt.Printf("Timeout!!! er=%+v\n", er)
+
+	case res := <-resultChan:
+		defer res.r.Body.Close()
+		out, _ := ioutil.ReadAll(res.r.Body)
+		fmt.Println("Server Response len: ", len(string(out)))
+	}
+	fmt.Println("main thread exit, ctx=", ctx)
+}
+
 func TstCtxEntry() {
+	tstGetBaidu()
+	return
+
 	Tst_Ctx_WithTimOut_1()
 	return
 
