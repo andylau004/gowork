@@ -317,6 +317,9 @@ func TstThreadId() {
 }
 
 func main() {
+	TstReflectEntry()
+	return
+
 	TstCtxEntry()
 	return
 
