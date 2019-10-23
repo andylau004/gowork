@@ -27,7 +27,6 @@ func ServeHTTP(ctx *fasthttp.RequestCtx) {
 		ctx.Response.SetBody([]byte("Error:2001"))
 		blg4go.Error("main|ServeHTTP|path|", string(ctx.Path()), " is not support!")
 	}
-
 }
 
 func StartRecvUpload() {
