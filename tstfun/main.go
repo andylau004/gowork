@@ -1737,6 +1737,9 @@ func fakeExec(args ...interface{}) {
 }
 
 func main() {
+	TstPanic()
+	return
+
 	JustTest()
 	return
 	tst_map_fun()
