@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+		{
+			"userId": 2890,
+			"sdkId": 0,
+			"shareGroup":
+			[
+				{ "shareFolderIds":  [123, 124], "wOrgIds": [100, 101], "rOrgIds": [778, 779], "wUserIds": [9981, 9982],  "rUserIds": [9983, 9985] },
+				{ "shareFolderIds":  [211, 276], "wOrgIds": [600, 601], "rOrgIds": [878, 879], "wUserIds": [1011, 1200],  "rUserIds": [761, 480] }
+			]
+        }
+        
+        
