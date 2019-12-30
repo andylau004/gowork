@@ -67,7 +67,47 @@ func handlePanic(r interface{}, hdr Handler, logger Logger) error {
 	return nil
 }
 
+// IT干货栈 定义一个结构体[大小写敏感]
+type Car struct {
+	Name   string  // 名称
+	Color  string  // 颜色
+	Length float32 // 长度
+}
+
+// 定义一个小车 结构
+type SmallCar struct {
+	Car            // 车
+	Height float32 // 高度
+
+}
+
+func (car *Car) run() {
+	fmt.Println(car.Name, "正在迅速行驶。。。。")
+}
+
+func (car *Car) fly() {
+	fmt.Println(car.Name, "正在飞行。。。。")
+}
+func (car Car) changeName() {
+	car.Name = "保时捷"
+}
+func (car *Car) realChangeName() {
+	car.Name = "宝马"
+}
+func TstCar() {
+	var car Car
+	car.Name = "小栈"
+	car.Color = "red"
+	car.Length = 2.0
+	fmt.Println(car)
+	fmt.Printf("Name: %p\n", &car.Name)
+	fmt.Printf("Color: %p\n", &car.Color)
+	fmt.Printf("Length: %p\n", &car.Length)
+}
+
 func TstPanic() {
+	TstCar()
+	return
 	func() {
 		defer HandlePanicFunc(nil, func(format string, a ...interface{}) {
 			fmt.Println(fmt.Sprintf(format, a...))
