@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"./pool"
+	"tstfun/pool"
 
 	"io"
 	"io/ioutil"
@@ -1645,7 +1645,108 @@ func tst_json() {
 
 }
 
+func TstTimeInterval() {
+
+	tStart := time.Now()
+	time.Sleep(time.Second * 2)
+	fmt.Println("client.Do timeinterval=", time.Now().Sub(tStart))
+
+}
+func DialCustom(network, address string, timeout time.Duration, localIP []byte, localPort int) (net.Conn, error) {
+	netAddr := &net.TCPAddr{Port: localPort}
+
+	if len(localIP) != 0 {
+		netAddr.IP = localIP
+	}
+
+	fmt.Println("netAddr:", netAddr)
+
+	d := net.Dialer{Timeout: timeout, LocalAddr: netAddr}
+	return d.Dial(network, address)
+}
+
+func Tstlocalipclient() {
+	//url 要请求的URL
+	serverAddr := "192.168.242.157:9981"
+
+	// 172.28.0.180
+	//localIP := []byte{0xAC, 0x1C, 0, 0xB4}  // 指定IP
+	// localIP := []byte(string("127.0.0.1")) //  any IP，不指定IP
+	localIP := []byte(string(""))
+	localPort := 9001 // 指定端口
+	conn, err := DialCustom("tcp", serverAddr, time.Second*2, localIP, localPort)
+	if err != nil {
+		fmt.Println("dial failed:", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	for {
+		nSendLen, err := conn.Write([]byte("asdfadsfadfasdfaaaaaaaaaaaaaaaaaaaa"))
+		// checkError(err)
+		fmt.Println("nsendlen=", nSendLen, ", err=", err)
+
+		// buffer := make([]byte, 512)
+		// reader := bufio.NewReader(conn)
+
+		// n, err2 := reader.Read(buffer)
+		// if err2 != nil {
+		// 	fmt.Println("Read failed:", err2)
+		// 	return
+		// }
+
+		// fmt.Println("count:", n, "msg:", string(buffer))
+
+		time.Sleep(time.Second)
+	}
+	select {}
+}
+
+func tst_map_fun() {
+	persons := make(map[string]int)
+	persons["张三"] = 19
+
+	mp := &persons
+
+	fmt.Printf("原始map的内存地址是：%p\n", mp)
+	modifyex(persons)
+	fmt.Println("map值被修改了，新值为:", persons)
+}
+
+func modifyex(p map[string]int) {
+	fmt.Printf("函数里接收到map的内存地址是：%p\n", &p)
+	p["张三"] = 20
+}
+
+func JustTest() {
+	stuff := []interface{}{"this", "that", "otherthing"}
+	fmt.Println("repeat content=", strings.Repeat(",?", len(stuff)-1))
+
+	sql := "select * from foo where id=? and name in (?" + strings.Repeat(",?", len(stuff)-1) + ")"
+	fmt.Println("SQL:", sql)
+
+	args := []interface{}{10}
+	args = append(args, stuff...)
+	fakeExec(args...)
+	// This also works, but I think it's harder for folks to read
+	//fakeExec(append([]interface{}{10},stuff...)...)
+}
+
+func fakeExec(args ...interface{}) {
+	fmt.Println("Got:", args)
+}
+
 func main() {
+	JustTest()
+	return
+	tst_map_fun()
+	return
+
+	Tstlocalipclient()
+	return
+
+	TstTimeInterval()
+	return
 	tst_json()
 	return
 
