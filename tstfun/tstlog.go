@@ -1,5 +1,3 @@
-
-
 package main
 
 import (
@@ -37,8 +35,8 @@ func GetCurrentPath() (string, error) {
 
 func dummyfun1() {
 
-	time.Sleep( time.Second )
-	fmt.Println( "" )
+	time.Sleep(time.Second)
+	fmt.Println("")
 
 }
 
@@ -56,31 +54,26 @@ func init_blog4goFun() {
 }
 
 func init() {
-	init_blog4goFun()
+	// init_blog4goFun()
 }
-
-
-
 
 func TstBlg4Fun() {
 
 	index := 0
-	for i := 0; i < 1000 * 10000; i ++ {
+	for i := 0; i < 1000*10000; i++ {
 
-		time.Sleep( time.Second )
+		time.Sleep(time.Second)
 
-		index ++
+		index++
 
-		blg4go.Info( "test blg4go info ---index=", index )
+		blg4go.Info("test blg4go info ---index=", index)
 
 		curPath, _ := GetCurrentPath()
-	
-		blg4go.Infof( "test blg4go infof PrintPwd=%s ---index=%d\n", curPath, index )
-	
-		blg4go.Errorf( "test blg4go Errorf PrintPwd=%s ---index=%d\n", curPath, index )
-	
+
+		blg4go.Infof("test blg4go infof PrintPwd=%s ---index=%d\n", curPath, index)
+
+		blg4go.Errorf("test blg4go Errorf PrintPwd=%s ---index=%d\n", curPath, index)
+
 	}
 
 }
-
-

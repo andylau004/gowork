@@ -272,7 +272,8 @@ func tstGetBaidu() {
 
 	// resultChan := make(chan Result, 1)
 	resultChan := make(chan Result)
-	req, err := http.NewRequest("GET", "http://www.google.com", nil)
+	req, err := http.NewRequest("GET", "http://www.baidu.com", nil)
+	// req, err := http.NewRequest("GET", "http://www.google.com", nil)
 	if err != nil {
 		fmt.Println("http request failed , err=", err)
 		return
@@ -300,7 +301,7 @@ func tstGetBaidu() {
 	case res := <-resultChan:
 		defer res.r.Body.Close()
 		out, _ := ioutil.ReadAll(res.r.Body)
-		fmt.Println("Server Response len: ", len(string(out)))
+		fmt.Println("Server Response len=", len(string(out)), ", respBody=", string(out))
 	}
 	fmt.Println("main thread exit, ctx=", ctx)
 }

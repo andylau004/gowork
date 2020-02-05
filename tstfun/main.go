@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -1136,25 +1137,6 @@ func PostAllPathFile() {
 	// wg.Wait()
 }
 
-func TstPostCheck() {
-
-	resp, err := http.Post("http://192.168.6.107:80/cloudfile/v1/preupload",
-		"application/x-www-form-urlencoded",
-		strings.NewReader("fileType=2&userId=1234567&fileName=123"))
-	if err != nil {
-		fmt.Println("Post err=", err)
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		// handle error
-		fmt.Println("readall err=", err)
-	}
-
-	fmt.Println(string(body))
-}
-
 func PostCheckFolderExist(userId int64, folderId int64, PId int64) int {
 	conn, err := net.Dial("tcp", srvAddr)
 	checkError(err)
@@ -1736,7 +1718,141 @@ func fakeExec(args ...interface{}) {
 	fmt.Println("Got:", args)
 }
 
+func BitOpr() {
+	var databyte byte = 0x7f
+	isLongHeader := databyte&0x80 > 0
+	fmt.Println(isLongHeader)
+}
+
+func write(ch chan int) {
+	fmt.Println("write beg -------")
+	defer fmt.Println("write end -------")
+	for i := 0; i < 5; i++ {
+		ch <- i
+		fmt.Println("successfully wrote", i, "to ch")
+	}
+	close(ch)
+}
+func Tt1() {
+	ch := make(chan int, 2)
+
+	go write(ch)
+	time.Sleep(2 * time.Second)
+
+	for v := range ch {
+		fmt.Println("read value", v, "from ch")
+		time.Sleep(2 * time.Second)
+	}
+}
+
+var ch1 chan int
+var ch2 chan int
+var chs = []chan int{ch1, ch2}
+var numbers = []int{1, 2, 3, 4, 5}
+
+func TttChan() {
+	persionChan := make(chan Person, 1)
+
+	p1 := Person{"Harry", 32, Addr{"Shanxi", "Xian"}}
+	fmt.Printf("P1 (1): %v\n", p1)
+
+	persionChan <- p1
+
+	p1.Address.district = "shijingshan"
+	fmt.Printf("P2 (2): %v\n", p1)
+
+	p1_copy := <-persionChan
+	fmt.Printf("p1_copy: %v\n", p1_copy)
+}
+
+func T_timeout() {
+	t := time.NewTimer(2 * time.Second)
+
+	now := time.Now()
+	fmt.Printf("Now time : %v.\n", now)
+
+	expire := <-t.C
+	fmt.Printf("Expiration time: %v.\n", expire)
+}
+
+func processex() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	tr := &http.Transport{}
+	client := &http.Client{Transport: tr}
+	resultChan := make(chan Result, 1)
+
+	req, err := http.NewRequest("GET", "http://www.google.com", nil)
+	if err != nil {
+		fmt.Println("http request failed, err:", err)
+		return
+	}
+
+	go func() {
+		resp, err := client.Do(req)
+
+		pack := Result{r: resp, err: err}
+		//将返回信息写入管道(正确或者错误的)
+		resultChan <- pack
+	}()
+
+	select {
+	case <-ctx.Done():
+		tr.CancelRequest(req)
+		er := <-resultChan
+		fmt.Println("Timeout! err=", er.err)
+	case res := <-resultChan:
+		defer res.r.Body.Close()
+		out, _ := ioutil.ReadAll(res.r.Body)
+		fmt.Printf("Server Response: %d\n", len(out))
+	}
+}
+
+func IoTest() {
+	reader := strings.NewReader("Clear is better than clever")
+	p := make([]byte, 4)
+
+	for {
+		n, err := reader.Read(p)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("EOF:", n)
+				break
+			}
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(n, string(p[:n]))
+	}
+
+}
+
 func main() {
+	IoTest()
+	return
+
+	processex()
+	return
+	TttChan()
+	return
+
+	TstCtxEntry()
+	return
+
+	TstRoundTripEntry()
+	return
+	Tt1()
+	return
+
+	BitOpr()
+	return
+	TstWorkPoolFun()
+	return
+
+	TstGoLog()
+	return
+
 	TstPanic()
 	return
 
@@ -1777,9 +1893,6 @@ func main() {
 	// return
 
 	TstSliceEntry()
-	return
-
-	TstCtxEntry()
 	return
 
 	TstReflectEntry()
