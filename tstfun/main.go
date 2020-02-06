@@ -1828,8 +1828,31 @@ func IoTest() {
 
 }
 
+func copyFile2(srcFile, destFile string) (int64, error) {
+	file1, err := os.Open(srcFile)
+	if err != nil {
+		fmt.Println("srcfile failed! err=", err)
+		return 0, err
+	}
+	file2, err := os.OpenFile(destFile, os.O_WRONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		fmt.Println("dstfile failed! err=", err)
+		return 0, err
+	}
+	defer file1.Close()
+	defer file2.Close()
+
+	return io.Copy(file2, file1)
+}
+
+func CpyFileFun() {
+	copyFile2("tstfun", "cpyfile")
+}
+
 func main() {
-	IoTest()
+	CpyFileFun()
+	return
+	TstReaderEntry()
 	return
 
 	processex()
