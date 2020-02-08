@@ -10,6 +10,7 @@ replace Utilgo => /home/fy/gopath/src/Utilgo
 require (
 	Utilgo v0.0.0-00010101000000-000000000000
 	github.com/YoungPioneers/blog4go v0.5.9
+	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7
 	github.com/valyala/fasthttp v1.7.0

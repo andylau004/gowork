@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -1849,9 +1850,172 @@ func CpyFileFun() {
 	copyFile2("tstfun", "cpyfile")
 }
 
+type Origin struct {
+	a uint64
+	b uint64
+}
+type WithPadding struct {
+	a uint64
+	_ [56]byte
+	b uint64
+	_ [56]byte
+}
+
+var num = 1000 * 1000
+
+func OriginParallel() {
+	var v Origin
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		for i := 0; i < num; i++ {
+			atomic.AddUint64(&v.a, 1)
+		}
+		wg.Done()
+	}()
+	go func() {
+		for i := 0; i < num; i++ {
+			atomic.AddUint64(&v.b, 1)
+		}
+		wg.Done()
+	}()
+	wg.Wait()
+	_ = v.a + v.b
+}
+func WithPaddingParallel() {
+	var v WithPadding
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		for i := 0; i < num; i++ {
+			atomic.AddUint64(&v.a, 1)
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		for i := 0; i < num; i++ {
+			atomic.AddUint64(&v.b, 1)
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
+	_ = v.a + v.b
+}
+
+func TstPaddingFun() {
+	var b time.Time
+
+	b = time.Now()
+	OriginParallel()
+	fmt.Printf("OriginParallel. Cost=%+v.\n", time.Now().Sub(b))
+
+	b = time.Now()
+	WithPaddingParallel()
+	fmt.Printf("WithPaddingParallel. Cost=%+v.\n", time.Now().Sub(b))
+}
+
+var bufpool *sync.Pool
+
+func init() {
+	bufpool = &sync.Pool{}
+	bufpool.New = func() interface{} {
+		return make([]byte, 32*1024)
+	}
+}
+
+func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
+	if wt, ok := src.(io.WriterTo); ok {
+		return wt.WriteTo(dst)
+	}
+	if rt, ok := dst.(io.ReaderFrom); ok {
+		return rt.ReadFrom(src)
+	}
+
+	buf := bufpool.Get().([]byte)
+	defer bufpool.Put(buf)
+
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			nw, ew := dst.Write(buf[0:nr])
+			if nw > 0 {
+				written += int64(nw)
+			}
+			if ew != nil {
+				err = ew
+				break
+			}
+			if nr != nw {
+				err = io.ErrShortWrite
+				break
+			}
+		}
+		if er == io.EOF {
+			break
+		}
+		if er != nil {
+			err = er
+			break
+		}
+	}
+	return written, err
+}
+
+type ObjCh struct {
+	Idx int
+}
+
+var readyObjs []*ObjCh
+
+func TstObjCh() {
+
+	fmt.Println("len(objs)=", len(readyObjs))
+
+	for i := 0; i < 10; i++ {
+		obj := &ObjCh{
+			Idx: i,
+		}
+		readyObjs = append(readyObjs, obj)
+	}
+
+	for _, tmpobj := range readyObjs {
+		fmt.Printf("tmpobj=%+v\n", *tmpobj)
+	}
+
+	tmpObjs := readyObjs
+
+	fmt.Printf("  tmpObjs=%p\n", tmpObjs)
+	fmt.Printf("readyObjs=%p\n", readyObjs)
+
+	n := len(tmpObjs) - 1
+
+	var ch *ObjCh
+	ch = readyObjs[n]
+	readyObjs[n] = nil
+	readyObjs = readyObjs[:n]
+
+	for _, tmpobj := range readyObjs {
+		fmt.Printf("tmpobj=%+v\n", *tmpobj)
+	}
+	fmt.Printf("  ch=%+v\n", *ch)
+}
+
 func main() {
+	TstObjCh()
+	return
+
+	TstPaddingFun()
+	return
+
 	CpyFileFun()
 	return
+
 	TstReaderEntry()
 	return
 
