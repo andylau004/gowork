@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -1782,9 +1783,10 @@ func processex() {
 
 	tr := &http.Transport{}
 	client := &http.Client{Transport: tr}
+	// resultChan := make(chan Result, 1)
 	resultChan := make(chan Result, 1)
 
-	req, err := http.NewRequest("GET", "http://www.google.com", nil)
+	req, err := http.NewRequest("GET", "http://www.abdcefdg.com:9981", nil)
 	if err != nil {
 		fmt.Println("http request failed, err:", err)
 		return
@@ -2006,7 +2008,203 @@ func TstObjCh() {
 	fmt.Printf("  ch=%+v\n", *ch)
 }
 
+type MyInt int
+type YourInt int
+
+func TstSlice_1() {
+
+	var str string = "da gongji ..."
+	fmt.Printf("str=%v\n", str)
+	return
+
+	m := MyInt(1)
+	y := YourInt(1)
+
+	fmt.Println("compare =", reflect.DeepEqual(m, y)) // false
+	return
+
+	s := []int{1, 2, 3, 4, 5}
+	ret := s[:0]
+	fmt.Println("ret=", ret)
+
+	for i := 0; i < len(s); i++ {
+		if s[i]&1 == 1 {
+			ret = append(ret, s[i])
+		}
+	}
+
+	fmt.Println("ret=", ret)
+}
+
+func TstTimeStamp() {
+	formatTimeStr := time.Unix(1572578818, 0).Format("2006-01-02 15:04:05")
+
+	fmt.Println("formatTimeStr=", formatTimeStr) //打印结果：2017-04-11 13:30:39
+}
+
+type CleanExpireTrash struct {
+	chCleanExpireFiles chan []*ObjCh
+}
+
+var g_mockClean CleanExpireTrash
+
+func TstSomeChan() {
+
+	g_mockClean.chCleanExpireFiles = make(chan []*ObjCh)
+	// var wg sync.WaitGroup
+	// wg.Add(2)
+	go func() {
+		// defer wg.Done()
+		var objs1 []*ObjCh
+		for i := 0; i < 10; i++ {
+			tmpobj := &ObjCh{
+				Idx: (i),
+			}
+			objs1 = append(objs1, tmpobj)
+		}
+		fmt.Println("logic 1 push")
+		g_mockClean.chCleanExpireFiles <- objs1
+		fmt.Println("logic 1 done")
+	}()
+
+	go func() {
+		// defer wg.Done()
+		var objs2 []*ObjCh
+		for i := 210; i < 220; i++ {
+			tmpobj := &ObjCh{
+				Idx: (i),
+			}
+			objs2 = append(objs2, tmpobj)
+		}
+		fmt.Println("logic 2 push")
+		g_mockClean.chCleanExpireFiles <- objs2
+		fmt.Println("logic 2 done")
+	}()
+	// wg.Wait()
+	fmt.Println("append worker done")
+
+	for {
+
+		select {
+		case tmpslice := <-g_mockClean.chCleanExpireFiles:
+			fmt.Println("slice worker beg")
+			for _, v := range tmpslice {
+				fmt.Printf("v=%+v\n", *v)
+			}
+			fmt.Println("slice worker end")
+		default:
+			time.Sleep(1 * time.Second)
+			fmt.Println("no found data, sleep")
+		}
+
+		// time.Sleep(1 * time.Second)
+	}
+}
+
+func TstMap() {
+	userCleanDayMap := make(map[int64]int)
+
+	cleanDay, ok := userCleanDayMap[1234]
+	fmt.Println("cleanday=", cleanDay, ", ok=", ok)
+	return
+	countryCapitalMap := make(map[string]string)
+
+	/* map插入key - value对,各个国家对应的首都 */
+	countryCapitalMap["France"] = "巴黎"
+	countryCapitalMap["Italy"] = "罗马"
+	countryCapitalMap["Japan"] = "东京"
+	countryCapitalMap["India "] = "新德里"
+
+	/*使用键输出地图值 */
+	for country := range countryCapitalMap {
+		fmt.Println(country, "首都是", countryCapitalMap[country])
+	}
+}
+
+func TstGorountine() {
+	runtime.GOMAXPROCS(1)
+	go func() {
+		fmt.Println("hello world")
+		// panic("hello world")  // 强制观察输出
+	}()
+	// go func() {
+	// 	for {
+	// 		// fmt.Println("aaa")  // 非内联函数，这行注释打开，将导致 hello world 的输出
+	// 	}
+	// }()
+	select {}
+}
+
+func MyCtx() {
+	defer fmt.Println("my ctx done")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	resultChan := make(chan int)
+	// tr := &http.Transport{}
+	// client := &http.Client{Transport: tr}
+	// // resultChan := make(chan Result, 1)
+	// resultChan := make(chan Result, 1)
+
+	// req, err := http.NewRequest("GET", "http://www.abdcefdg.com:9981", nil)
+	// if err != nil {
+	// 	fmt.Println("http request failed, err:", err)
+	// 	return
+	// }
+
+	fmt.Println(Utilgo.GetCurStrTime(), "before go")
+	go func() {
+		time.Sleep(1 * time.Second)
+		// resp, err := client.Do(req)
+
+		// pack := Result{r: resp, err: err}
+		// //将返回信息写入管道(正确或者错误的)
+		resultChan <- 77889
+	}()
+	fmt.Println(Utilgo.GetCurStrTime(), "after go")
+
+	select {
+	case <-ctx.Done():
+		fmt.Println(Utilgo.GetCurStrTime(), "Timeout! err=")
+
+	case res := <-resultChan:
+		fmt.Println("Server Response=", res)
+
+		// tr.CancelRequest(req)
+		// er := <-resultChan
+		// fmt.Println("Timeout! err=", er.err)
+		// defer res.r.Body.Close()
+		// out, _ := ioutil.ReadAll(res.r.Body)
+		// fmt.Printf("Server Response: %d\n", len(out))
+	}
+	fmt.Println(Utilgo.GetCurStrTime(), " out select ")
+
+}
+
 func main() {
+	// TstGorountine()
+	// return
+	MyCtx()
+	return
+
+	processex()
+	return
+
+	TstMap()
+	return
+
+	TstSomeChan()
+	return
+
+	TstTimeStamp()
+	return
+
+	TstSlice_1()
+	return
+
+	WorkerPoolEntry()
+	return
+
 	TstObjCh()
 	return
 
@@ -2019,8 +2217,6 @@ func main() {
 	TstReaderEntry()
 	return
 
-	processex()
-	return
 	TttChan()
 	return
 
